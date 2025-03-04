@@ -37,7 +37,7 @@ Boom! You’re live. 🎥🤟
 - **Python** 🐍
 - **MediaPipe** ✋
 - **OpenCV** 🎥
-- **TensorFlow/PyTorch** 🔥
+- **TensorFlow** 🔥
 - **Cloud AI (Planned)** ☁️
 - **Hybrid-Quantum AI (Coming Soon)** ⚛️
 
