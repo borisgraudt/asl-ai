@@ -6,25 +6,25 @@ import pickle
 from tensorflow.keras.models import load_model # type: ignore
 
 def load_resources():
-
     print("Загрузка модели и необходимых файлов...")
     try:
         model = load_model('models/model.keras')
         
+        # Загружаем маппинг букв
         with open("models/label_encoder.pkl", "rb") as f:
-            le = pickle.load(f)
+            label_mapping = pickle.load(f)
         
+        # Загружаем параметры нормализации
         with open("models/scaler.pkl", "rb") as f:
-            scaler = pickle.load(f)
+            scaler_params = pickle.load(f)
             
         print("Модель и файлы успешно загружены!")
-        return model, le, scaler
+        return model, label_mapping, scaler_params
     except Exception as e:
         print(f"Ошибка при загрузке файлов: {e}")
         return None, None, None
 
-def process_landmarks(landmarks, scaler):
-
+def process_landmarks(landmarks, scaler_params):
     # Извлекаем координаты точек
     points = []
     for landmark in landmarks.landmark:
@@ -33,15 +33,15 @@ def process_landmarks(landmarks, scaler):
     # Преобразуем в numpy массив
     features = np.array(points)
     
-    # Нормализация
-    features = scaler.transform(features.reshape(1, -1))
+    # Нормализация с сохраненными параметрами
+    features = (features - scaler_params['mean']) / (scaler_params['std'] + 1e-8)
     
-    return features
+    return features.reshape(1, -1)
 
 def main():
     # Загрузка ресурсов
-    model, le, scaler = load_resources()
-    if None in (model, le, scaler):
+    model, label_mapping, scaler_params = load_resources()
+    if None in (model, label_mapping, scaler_params):
         return
     
     # Инициализация MediaPipe
@@ -50,8 +50,8 @@ def main():
     hands = mp_hands.Hands(
         static_image_mode=False,
         max_num_hands=1,
-        min_detection_confidence=0.7,
-        min_tracking_confidence=0.7
+        min_detection_confidence=0.8,
+        min_tracking_confidence=0.8
     )
     
     # Инициализация камеры
@@ -67,9 +67,19 @@ def main():
     
     # Переменные для сглаживания предсказаний
     prediction_history = []
-    HISTORY_LENGTH = 5
+    HISTORY_LENGTH = 10
     
-    print("Готово! Нажмите 'q' для выхода.")
+    # Переменные для текстового редактора
+    text = ""
+    last_prediction = None
+    no_hand_frames = 0
+    NO_HAND_THRESHOLD = 20
+    
+    # Минимальная уверенность для предсказания
+    MIN_CONFIDENCE = 0.7
+    MIN_STABILITY = 0.7
+    
+    print("Готово! Нажмите 'q' для выхода, 'backspace' для удаления последнего символа.")
     
     while cap.isOpened():
         ret, frame = cap.read()
@@ -88,6 +98,8 @@ def main():
         info_display = np.zeros((200, frame.shape[1], 3), dtype=np.uint8)
         
         if results.multi_hand_landmarks:
+            no_hand_frames = 0  # Сбрасываем счетчик кадров без руки
+            
             # Отрисовка руки
             for landmarks in results.multi_hand_landmarks:
                 mp_drawing.draw_landmarks(
@@ -108,15 +120,9 @@ def main():
                     )
                 )
                 
-                # Добавляем подсветку контура руки
-                for landmark in landmarks.landmark:
-                    h, w, _ = frame.shape
-                    cx, cy = int(landmark.x * w), int(landmark.y * h)
-                    cv2.circle(frame, (cx, cy), 15, (224, 255, 255), -1)  # Мягкая подсветка
-                
                 try:
                     # Обработка ключевых точек
-                    features = process_landmarks(landmarks, scaler)
+                    features = process_landmarks(landmarks, scaler_params)
                     
                     # Предсказание
                     prediction = model.predict(features, verbose=0)
@@ -135,7 +141,14 @@ def main():
                     stability = most_common[1] / len(prediction_history)
                     
                     # Получаем букву
-                    predicted_letter = le.inverse_transform([predicted_class])[0]
+                    predicted_letter = label_mapping[predicted_class]
+                    
+                    # Обновляем текст только если предсказание изменилось и стабильно
+                    if (predicted_letter != last_prediction and 
+                        stability > MIN_STABILITY and 
+                        confidence > MIN_CONFIDENCE):
+                        text += predicted_letter
+                        last_prediction = predicted_letter
                     
                     # Отображение информации
                     cv2.putText(info_display, f"Letter: {predicted_letter}", (20, 50),
@@ -149,8 +162,18 @@ def main():
                     print(f"Ошибка при обработке кадра: {e}")
         else:
             # Если рука не обнаружена
+            no_hand_frames += 1
+            if no_hand_frames >= NO_HAND_THRESHOLD and last_prediction is not None:
+                text += " "
+                last_prediction = None
+                no_hand_frames = 0
+            
             cv2.putText(info_display, "Show the gesture to the camera", (20, 50),
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        
+        # Отображаем текущий текст
+        cv2.putText(frame, text[-30:] if len(text) > 30 else text, (10, 30),
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
         
         # Объединяем основной кадр и информационную панель
         combined_frame = np.vstack([frame, info_display])
@@ -158,9 +181,12 @@ def main():
         # Показываем результат
         cv2.imshow('ASL Recognition', combined_frame)
         
-        # Выход по клавише 'q'
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        # Обработка клавиш
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):  # Выход
             break
+        elif key == 8:  # Backspace
+            text = text[:-1] if text else ""
     
     # Освобождение ресурсов
     print("Завершение работы...")

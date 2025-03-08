@@ -11,28 +11,40 @@ import pickle
 import os
 
 def create_model(input_shape, num_classes):
-    """Создание архитектуры модели"""
+    """Создание архитектуры модели для распознавания букв"""
     model = Sequential([
         # Входной слой
-        Dense(256, input_shape=(input_shape,), activation='relu'),
+        Dense(2048, input_shape=(input_shape,), activation='relu'),
         BatchNormalization(),
-        Dropout(0.3),
+        Dropout(0.5),
         
         # Скрытые слои
+        Dense(1024, activation='relu'),
+        BatchNormalization(),
+        Dropout(0.5),
+        
+        Dense(512, activation='relu'),
+        BatchNormalization(),
+        Dropout(0.5),
+        
+        Dense(256, activation='relu'),
+        BatchNormalization(),
+        Dropout(0.4),
+        
         Dense(128, activation='relu'),
         BatchNormalization(),
-        Dropout(0.3),
+        Dropout(0.4),
         
         Dense(64, activation='relu'),
         BatchNormalization(),
-        Dropout(0.2),
+        Dropout(0.3),
         
-        # Выходной слой
-        Dense(num_classes, activation='softmax')
+        # Выходной слой (26 букв английского алфавита)
+        Dense(26, activation='softmax')
     ])
     
     model.compile(
-        optimizer=Adam(learning_rate=0.001),
+        optimizer=Adam(learning_rate=0.00005),  # Уменьшаем learning rate
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )
@@ -49,27 +61,42 @@ def train_model():
     y_train = np.load("data/processed/y_train.npy")
     y_test = np.load("data/processed/y_test.npy")
     
-    # Загрузка label encoder для получения количества классов
-    with open("models/label_encoder.pkl", "rb") as f:
-        le = pickle.load(f)
+    # Нормализация данных
+    mean = X_train.mean(axis=0)
+    std = X_train.std(axis=0)
+    X_train = (X_train - mean) / (std + 1e-8)
+    X_test = (X_test - mean) / (std + 1e-8)
+    
+    # Создаем маппинг для букв (A=0, B=1, ...)
+    letters = [chr(i) for i in range(65, 91)]  # A-Z
+    label_mapping = {i: letter for i, letter in enumerate(letters)}
+    
+    # Сохраняем label encoder
+    with open("models/label_encoder.pkl", "wb") as f:
+        pickle.dump(label_mapping, f)
+    
+    # Сохраняем scaler
+    scaler_params = {'mean': mean, 'std': std}
+    with open("models/scaler.pkl", "wb") as f:
+        pickle.dump(scaler_params, f)
     
     print("\nСоздание модели...")
-    model = create_model(X_train.shape[1], len(le.classes_))
+    model = create_model(X_train.shape[1], len(letters))
     model.summary()
     
-    # Callbacks
+    # Улучшенные callbacks
     callbacks = [
         EarlyStopping(
             monitor='val_loss',
-            patience=10,
+            patience=20,  # Увеличиваем patience
             restore_best_weights=True,
             verbose=1
         ),
         ReduceLROnPlateau(
             monitor='val_loss',
-            factor=0.5,
-            patience=5,
-            min_lr=1e-6,
+            factor=0.1,  # Более агрессивное уменьшение learning rate
+            patience=10,
+            min_lr=1e-8,
             verbose=1
         )
     ]
@@ -79,8 +106,8 @@ def train_model():
         X_train,
         y_train,
         validation_data=(X_test, y_test),
-        epochs=50,
-        batch_size=32,
+        epochs=150,  # Увеличиваем количество эпох
+        batch_size=16,  # Уменьшаем размер батча
         callbacks=callbacks,
         verbose=1
     )
@@ -122,9 +149,11 @@ def train_model():
     y_pred = model.predict(X_test)
     y_pred_classes = np.argmax(y_pred, axis=1)
     
-    plt.figure(figsize=(12, 10))
+    plt.figure(figsize=(15, 15))
     cm = confusion_matrix(y_test, y_pred_classes)
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                xticklabels=letters,
+                yticklabels=letters)
     plt.title('Матрица ошибок')
     plt.xlabel('Предсказанный класс')
     plt.ylabel('Истинный класс')
@@ -133,7 +162,7 @@ def train_model():
     
     # Детальный отчет
     print("\nДетальный отчет по классификации:")
-    print(classification_report(y_test, y_pred_classes, target_names=le.classes_))
+    print(classification_report(y_test, y_pred_classes, target_names=letters))
     
     # Сохранение модели
     print("\nСохранение модели...")
