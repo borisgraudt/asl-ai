@@ -52,6 +52,3 @@ MIT – use it, improve it, share it! Just give credit where it's due. 😉
 
 ## 🔄 Latest Updates
 - Added support for dynamic gestures 🎯
-- Improved model accuracy with LSTM layers 🧠
-- Enhanced real-time recognition performance ⚡
-- Added gesture history tracking 📝
