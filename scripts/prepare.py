@@ -31,8 +31,17 @@ def prepare_data():
         for file in os.listdir(letter_dir):
             if file.endswith(".npy"):
                 file_path = os.path.join(letter_dir, file)
-                # Загружаем координаты (63 признака: 21 точка * 3 координаты)
                 coordinates = np.load(file_path)
+                # --- Position-invariant preprocessing ---
+                # coordinates: (63,) -> (21, 3)
+                coords = coordinates.reshape(-1, 3)
+                palm = coords[0]  # landmark 0
+                coords_centered = coords - palm  # центрирование
+                max_dist = np.linalg.norm(coords_centered, axis=1).max()
+                if max_dist > 0:
+                    coords_centered /= max_dist  # масштабирование
+                coordinates = coords_centered.flatten()
+                # ---
                 X.append(coordinates)
                 y.append(letter)
     

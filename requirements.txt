@@ -5,4 +5,12 @@ mediapipe>=0.8.0
 scikit-learn>=0.24.0
 pandas>=1.2.0
 matplotlib>=3.3.0
-pillow>=8.0.0 
+pillow>=8.0.0
+vispy
+PyQt5
+dash
+plotly
+pennylane
+qiskit
+torch
+pennylane-lightning 

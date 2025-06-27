@@ -1,15 +1,28 @@
+# ---
+# Для визуализации сети запустите в отдельном терминале:
+#   python visualize_network.py
+# ---
+
 import numpy as np
 import cv2
 import mediapipe as mp
 import tensorflow as tf
 import pickle
 from tensorflow.keras.models import load_model # type: ignore
+from tensorflow.keras import Model # type: ignore
+import socket
+import json
 
 def load_resources():
 
     print("Загрузка модели и необходимых файлов...")
     try:
         model = load_model('models/model.keras')
+        model.predict(np.zeros((1, 63)))  # Инициализация input для activation_model
+        
+        # Получаем имена скрытых слоёв Dense
+        dense_layer_names = [layer.name for layer in model.layers if 'dense' in layer.name]
+        activation_model = Model(inputs=model.input, outputs=[model.get_layer(name).output for name in dense_layer_names])
         
         with open("models/label_encoder.pkl", "rb") as f:
             le = pickle.load(f)
@@ -18,30 +31,31 @@ def load_resources():
             scaler = pickle.load(f)
             
         print("Модель и файлы успешно загружены!")
-        return model, le, scaler
+        return model, le, scaler, activation_model, dense_layer_names
     except Exception as e:
         print(f"Ошибка при загрузке файлов: {e}")
-        return None, None, None
+        return None, None, None, None, None
 
 def process_landmarks(landmarks, scaler):
-
     # Извлекаем координаты точек
     points = []
     for landmark in landmarks.landmark:
         points.extend([landmark.x, landmark.y, landmark.z])
-    
-    # Преобразуем в numpy массив
-    features = np.array(points)
-    
+    coords = np.array(points).reshape(-1, 3)
+    palm = coords[0]
+    coords_centered = coords - palm
+    max_dist = np.linalg.norm(coords_centered, axis=1).max()
+    if max_dist > 0:
+        coords_centered /= max_dist
+    features = coords_centered.flatten()
     # Нормализация
     features = scaler.transform(features.reshape(1, -1))
-    
     return features
 
 def main():
     # Загрузка ресурсов
-    model, le, scaler = load_resources()
-    if None in (model, le, scaler):
+    model, le, scaler, activation_model, dense_layer_names = load_resources()
+    if None in (model, le, scaler, activation_model, dense_layer_names):
         return
     
     # Инициализация MediaPipe
@@ -69,6 +83,11 @@ def main():
     prediction_history = []
     HISTORY_LENGTH = 5
     
+    # --- Сокет для отправки активаций ---
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    VIS_HOST = '127.0.0.1'
+    VIS_PORT = 50007
+    
     print("Готово! Нажмите 'q' для выхода.")
     
     while cap.isOpened():
@@ -85,7 +104,7 @@ def main():
         results = hands.process(rgb_frame)
         
         # Создаем информационную панель
-        info_display = np.zeros((200, frame.shape[1], 3), dtype=np.uint8)
+        info_display = np.zeros((300, frame.shape[1], 3), dtype=np.uint8)  # увеличиваем высоту для активаций
         
         if results.multi_hand_landmarks:
             # Отрисовка руки
@@ -117,6 +136,16 @@ def main():
                 try:
                     # Обработка ключевых точек
                     features = process_landmarks(landmarks, scaler)
+                    
+                    # Получаем активации
+                    activations = activation_model.predict(features, verbose=0)
+                    
+                    # Отправляем активации в визуализатор
+                    acts_to_send = [act[0].tolist() for act in activations]
+                    try:
+                        sock.sendto(json.dumps(acts_to_send).encode(), (VIS_HOST, VIS_PORT))
+                    except Exception as e:
+                        print(f"Ошибка отправки активаций: {e}")
                     
                     # Предсказание
                     prediction = model.predict(features, verbose=0)
