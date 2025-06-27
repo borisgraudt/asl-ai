@@ -21,7 +21,13 @@ def process_landmarks(hand_landmarks):
     for landmark in hand_landmarks.landmark:
         features.extend([landmark.x, landmark.y, landmark.z])
     
-    return np.array(features, dtype=np.float32)
+    coords = np.array(features, dtype=np.float32).reshape(-1, 3)
+    palm = coords[0]
+    coords_centered = coords - palm
+    max_dist = np.linalg.norm(coords_centered, axis=1).max()
+    if max_dist > 0:
+        coords_centered /= max_dist
+    return coords_centered.flatten()
 
 def collect_gesture_data(gesture_name, num_samples=400, fps=30):
     """Сбор данных для динамического жеста"""
