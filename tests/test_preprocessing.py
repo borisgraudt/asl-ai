@@ -32,8 +32,8 @@ class TestPreprocessing:
         assert coords.shape == (21, 3)
         
         # Verify values
-        assert coords[0, 0] == 0.0
-        assert coords[1, 1] == 0.02
+        assert np.isclose(coords[0, 0], 0.0)
+        assert np.isclose(coords[1, 1], 0.02)
     
     def test_normalize_landmarks(self):
         # Test position-invariant normalization.

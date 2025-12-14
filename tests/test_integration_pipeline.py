@@ -22,16 +22,18 @@ class _DummyLabelEncoder:
         return self.classes_[np.array(idxs)]
 
 
+class _IdentityScaler:
+     # Pickle-friendly identity scaler for integration tests.
+
+    def transform(self, x):
+        return x
+
+
 def test_inference_pipeline_load_and_predict(tmp_path: Path) -> None:
     # Create and save a tiny model
     model = create_asl_model(input_shape=63, num_classes=3, learning_rate=0.001)
     model_path = tmp_path / "model.h5"
     model.save(model_path)
-
-    # Create and save an identity scaler (StandardScaler-like interface)
-    class _IdentityScaler:
-        def transform(self, x):
-            return x
 
     scaler_path = tmp_path / "scaler.pkl"
     with open(scaler_path, "wb") as f:

@@ -45,15 +45,15 @@ def normalize_landmarks(coords: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     coords : np.ndarray
-        Array of shape (21, 3) containing hand landmark coordinates
+        Array of shape (N, 3) containing hand landmark coordinates
     
     Returns
     -------
     np.ndarray
-        Normalized coordinates of shape (21, 3)
+        Normalized coordinates of shape (N, 3)
     """
-    if coords.shape != (21, 3):
-        raise ValueError(f"Expected shape (21, 3), got {coords.shape}")
+    if coords.ndim != 2 or coords.shape[1] != 3 or coords.shape[0] < 2:
+        raise ValueError(f"Expected shape (N, 3) with N>=2, got {coords.shape}")
     
     # Center coordinates relative to palm (landmark 0)
     palm = coords[0]
