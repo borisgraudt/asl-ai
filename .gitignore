@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -22,21 +21,60 @@ wheels/
 *.egg
 
 # Virtual Environment
+env/
 venv/
 ENV/
+env.bak/
+venv.bak/
 
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Logs
+logs/
+*.log
+
+# Model files (optional - uncomment if you don't want to track models)
+# models/*.keras
+# models/*.pkl
+# models/*.tflite
+models/*.h5
+models/*.weights.h5
+
+# Data (optional - uncomment if you don't want to track data)
+# data/processed/*.npy
+data/raw_gestures/
+data/raw/
+data/sample_raw_gestures/.gitkeep
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Project specific
-*.log
-*.csv
-*.json
-!config.json 
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Documentation
+docs/api/

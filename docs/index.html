@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL&AI — Real-Time Sign Language Recognition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2C3E50;
+            --secondary: #4A90E2;
+            --accent: #27AE60;
+            --text: #34495E;
+            --bg: #FFFFFF;
+            --bg-light: #F8F9FA;
+            --border: #E1E8ED;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text);
+            line-height: 1.6;
+            background: var(--bg);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        header {
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            padding: 32px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        .hero {
+            padding: 120px 0 80px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 24px;
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+        }
+
+        .hero .subtitle {
+            font-size: 22px;
+            color: #7F8C8D;
+            margin-bottom: 48px;
+            font-weight: 400;
+        }
+
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 48px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 8px 16px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .badge.accent {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .cta {
+            display: inline-flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #357ABD;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--secondary);
+            color: var(--secondary);
+        }
+
+        section {
+            padding: 80px 0;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 16px;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: #7F8C8D;
+            text-align: center;
+            margin-bottom: 64px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+            margin-top: 48px;
+        }
+
+        .feature-card {
+            padding: 32px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--secondary);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: #7F8C8D;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .metrics {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 48px;
+            margin-top: 48px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 32px;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #7F8C8D;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .architecture {
+            background: var(--bg-light);
+            padding: 48px;
+            border-radius: 12px;
+            margin-top: 48px;
+            overflow-x: auto;
+        }
+
+        .architecture-diagram {
+            text-align: center;
+        }
+
+        .architecture-diagram svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .code-block {
+            background: #1E1E1E;
+            color: #D4D4D4;
+            padding: 24px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 24px 0;
+        }
+
+        .code-block .comment {
+            color: #6A9955;
+        }
+
+        .code-block .keyword {
+            color: #569CD6;
+        }
+
+        .code-block .string {
+            color: #CE9178;
+        }
+
+        footer {
+            background: var(--primary);
+            color: white;
+            padding: 64px 0 32px;
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            text-align: center;
+        }
+
+        .footer-tagline {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .footer-subtitle {
+            color: #BDC3C7;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #BDC3C7;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-license {
+            padding-top: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #95A5A6;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero .subtitle {
+                font-size: 18px;
+            }
+
+            .section-title {
+                font-size: 28px;
+            }
+
+            .nav-links {
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">ASL&AI</div>
+            <ul class="nav-links">
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#performance">Performance</a></li>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="https://github.com/borisgraudt/asl-ai" target="_blank">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>ASL&AI</h1>
+                <p class="subtitle">Real-time American Sign Language recognition with 97.2% accuracy</p>
+                <div class="badges">
+                    <span class="badge accent">97.2% Accuracy</span>
+                    <span class="badge">&lt;5ms Latency</span>
+                    <span class="badge">Privacy-First</span>
+                    <span class="badge">Open Source</span>
+                </div>
+                <div class="cta">
+                    <a href="#getting-started" class="btn btn-primary">Get Started</a>
+                    <a href="https://github.com/borisgraudt/asl-ai" class="btn btn-secondary" target="_blank">View on GitHub</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="overview">
+            <div class="container">
+                <h2 class="section-title">Overview</h2>
+                <p class="section-subtitle">
+                    A privacy-first, real-time ASL translation system that processes hand gestures locally 
+                    without cloud dependencies. Built for researchers, developers, and accessibility advocates.
+                </p>
+            </div>
+        </section>
+
+        <section id="features">
+            <div class="container">
+                <h2 class="section-title">Features</h2>
+                <div class="features">
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Real-time Recognition</h3>
+                        <p>Process hand gestures from webcam input with sub-5ms latency for seamless interaction.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h3>Privacy-First</h3>
+                        <p>Complete local processing ensures your data never leaves your device. No cloud dependencies.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>High Accuracy</h3>
+                        <p>Achieve 97.2% test accuracy on 26 ASL letters with a lightweight, edge-optimized model.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔬</div>
+                        <h3>Research-Ready</h3>
+                        <p>Modular architecture designed for extensibility and experimentation with novel approaches.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3>Edge-Optimized</h3>
+                        <p>Lightweight model (&lt;5MB) optimized for deployment on mobile and embedded systems.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🌐</div>
+                        <h3>Open Source</h3>
+                        <p>MIT licensed. Free to use, modify, and contribute for academic and commercial purposes.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="performance">
+            <div class="container">
+                <h2 class="section-title">Performance</h2>
+                <div class="metrics">
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <div class="metric-value">97.2%</div>
+                            <div class="metric-label">Test Accuracy</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">&lt;5ms</div>
+                            <div class="metric-label">Inference Latency</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">21K</div>
+                            <div class="metric-label">Samples/sec</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">&lt;5MB</div>
+                            <div class="metric-label">Model Size</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture">
+            <div class="container">
+                <h2 class="section-title">System Architecture</h2>
+                <div class="architecture">
+                    <div class="architecture-diagram">
+                        <svg width="800" height="300" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#357ABD;stop-opacity:1" />
+                                </linearGradient>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                    <polygon points="0 0, 10 3, 0 6" fill="#4A90E2" />
+                                </marker>
+                            </defs>
+                            
+                            <rect x="20" y="100" width="120" height="80" rx="10" fill="#E8F4F8" stroke="#4A90E2" stroke-width="2"/>
+                            <text x="80" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#2C3E50">Webcam</text>
+                            <path d="M 140 140 L 180 140" stroke="#4A90E2" stroke-width="3" marker-end="url(#arrowhead)"/>
+                            
+                            <rect x="180" y="100" width="120" height="80" rx="10" fill="#E8F4F8" stroke="#4A90E2" stroke-width="2"/>
+                            <text x="240" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#2C3E50">MediaPipe</text>
+                            <text x="240" y="155" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7F8C8D">Hand Tracking</text>
+                            <path d="M 300 140 L 340 140" stroke="#4A90E2" stroke-width="3" marker-end="url(#arrowhead)"/>
+                            
+                            <rect x="340" y="100" width="120" height="80" rx="10" fill="#E8F4F8" stroke="#4A90E2" stroke-width="2"/>
+                            <text x="400" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#2C3E50">Preprocessing</text>
+                            <text x="400" y="155" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7F8C8D">Normalization</text>
+                            <path d="M 460 140 L 500 140" stroke="#4A90E2" stroke-width="3" marker-end="url(#arrowhead)"/>
+                            
+                            <rect x="500" y="80" width="140" height="120" rx="10" fill="url(#grad1)" stroke="#357ABD" stroke-width="2"/>
+                            <text x="570" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">Neural Network</text>
+                            <text x="570" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white">256 → 128 → 64</text>
+                            <text x="570" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white">Dropout + BatchNorm</text>
+                            <text x="570" y="170" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white">26-class output</text>
+                            <path d="M 640 140 L 680 140" stroke="#4A90E2" stroke-width="3" marker-end="url(#arrowhead)"/>
+                            
+                            <rect x="680" y="100" width="100" height="80" rx="10" fill="#E8F4F8" stroke="#4A90E2" stroke-width="2"/>
+                            <text x="730" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#2C3E50">Text Output</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="getting-started">
+            <div class="container">
+                <h2 class="section-title">Getting Started</h2>
+                <p class="section-subtitle">
+                    Get up and running in minutes with our simple installation process.
+                </p>
+                <div class="code-block">
+<span class="comment"># Clone repository</span>
+<span class="keyword">git</span> clone https://github.com/borisgraudt/asl-ai.git
+<span class="keyword">cd</span> asl-ai
+
+<span class="comment"># Create virtual environment</span>
+python -m venv env
+source env/bin/activate  <span class="comment"># On Windows: env\Scripts\activate</span>
+
+<span class="comment"># Install dependencies</span>
+pip install -r requirements.txt
+
+<span class="comment"># Run real-time recognition</span>
+python main.py
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-tagline">ASL&AI</div>
+                <div class="footer-subtitle">Bridging communication through AI</div>
+                <div class="footer-links">
+                    <a href="https://github.com/borisgraudt/asl-ai">GitHub</a>
+                    <a href="https://github.com/borisgraudt/asl-ai/blob/main/README.md">Documentation</a>
+                    <a href="https://github.com/borisgraudt/asl-ai/issues">Issues</a>
+                    <a href="https://github.com/borisgraudt/asl-ai/blob/main/LICENSE">License</a>
+                </div>
+                <div class="footer-license">
+                    MIT License © 2024 Boris Graudt
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+

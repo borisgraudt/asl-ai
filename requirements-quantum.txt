@@ -1,0 +1,14 @@
+# Optional quantum dependencies (future work / exploration)
+#
+# Install with:
+#   python -m pip install -r requirements-quantum.txt
+#
+# Notes:
+# - PennyLane currently requires numpy < 1.24, so this is kept separate from core deps.
+
+-r requirements.txt
+
+pennylane==0.32.0
+pennylane-lightning==0.32.0
+
+

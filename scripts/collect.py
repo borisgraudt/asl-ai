@@ -6,17 +6,15 @@ import time
 from pathlib import Path
 
 def create_directories():
-    """Создание необходимых директорий"""
     data_dir = Path("data/raw")
     data_dir.mkdir(parents=True, exist_ok=True)
     return data_dir
 
 def process_landmarks(hand_landmarks):
-    """Обработка точек руки в массив признаков"""
     if not hand_landmarks:
         return None
     
-    # Извлекаем координаты всех точек руки
+    # Extract coordinates for all hand landmarks
     features = []
     for landmark in hand_landmarks.landmark:
         features.extend([landmark.x, landmark.y, landmark.z])
@@ -30,8 +28,7 @@ def process_landmarks(hand_landmarks):
     return coords_centered.flatten()
 
 def collect_gesture_data(gesture_name, num_samples=400, fps=30):
-    """Сбор данных для динамического жеста"""
-    # Инициализация MediaPipe
+    # Initialize MediaPipe
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands(
         static_image_mode=False,
@@ -41,19 +38,19 @@ def collect_gesture_data(gesture_name, num_samples=400, fps=30):
     )
     mp_draw = mp.solutions.drawing_utils
     
-    # Создание директорий
+    # Create output directories
     data_dir = create_directories()
     gesture_dir = data_dir / gesture_name
     gesture_dir.mkdir(exist_ok=True)
     
-    # Инициализация камеры
+    # Initialize camera
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FPS, fps)
     
-    print(f"\nНачинаем запись жеста '{gesture_name}'")
-    print(f"Нажмите 'SPACE' для начала записи")
-    print(f"Нажмите 'SPACE' снова для остановки записи")
-    print(f"Нажмите 'q' для выхода")
+    print(f"\nStarting recording for gesture '{gesture_name}'")
+    print("Press SPACE to start recording")
+    print("Press SPACE again to stop recording")
+    print("Press 'q' to quit")
     
     recording = False
     frame_count = 0
@@ -62,26 +59,26 @@ def collect_gesture_data(gesture_name, num_samples=400, fps=30):
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("Ошибка чтения кадра")
+            print("Error: failed to read frame")
             break
             
-        # Конвертируем изображение для MediaPipe
+        # Convert frame for MediaPipe
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = hands.process(rgb_frame)
         
-        # Отрисовка точек руки
+        # Draw hand landmarks
         if results.multi_hand_landmarks:
             for hand_landmarks in results.multi_hand_landmarks:
                 mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
         
-        # Отображение статуса
+        # Display status
         status = "Recording..." if recording else "Waiting..."
         cv2.putText(frame, f"Status: {status}", (10, 30), 
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         cv2.putText(frame, f"Recorded: {len(sequence)}/{num_samples}", (10, 70), 
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         
-        # Обработка клавиш
+        # Key handling
         key = cv2.waitKey(1) & 0xFF
         
         if key == ord('q'):
@@ -96,44 +93,43 @@ def collect_gesture_data(gesture_name, num_samples=400, fps=30):
                 recording = False
                 print("Stopping recording...")
         
-        # Запись данных
+        # Save samples
         if recording and results.multi_hand_landmarks:
             features = process_landmarks(results.multi_hand_landmarks[0])
             if features is not None:
                 sequence.append(features)
                 frame_count += 1
                 
-                if frame_count >= 30:  # Записываем 30 кадров для каждого жеста
+                if frame_count >= 30:  # Record 30 frames per sample
                     if len(sequence) < num_samples:
-                        # Сохраняем последовательность
+                        # Save sequence
                         sequence_array = np.array(sequence)
                         np.save(gesture_dir / f"gesture_{len(sequence)}.npy", sequence_array)
                         sequence = []
                         frame_count = 0
-                        print(f"Записано {len(sequence)}/{num_samples} жестов")
+                        print(f"Saved {len(sequence)}/{num_samples} samples")
                     else:
                         recording = False
-                        print("Достигнуто максимальное количество жестов")
+                        print("Reached maximum number of samples")
         
         cv2.imshow("Gesture Collection", frame)
     
     cap.release()
     cv2.destroyAllWindows()
-    print(f"\nЗапись жеста '{gesture_name}' завершена")
+    print(f"\nRecording for gesture '{gesture_name}' finished")
 
 def main():
-    """Основная функция"""
-    print("Программа для записи динамических жестов")
+    print("Gesture recording utility")
     print("=" * 50)
     
     while True:
-        gesture_name = input("\nВведите название жеста (или 'q' для выхода): ").strip()
+        gesture_name = input("\nEnter gesture name (or 'q' to quit): ").strip()
         
         if gesture_name.lower() == 'q':
             break
             
         if not gesture_name:
-            print("Название жеста не может быть пустым")
+            print("Gesture name cannot be empty")
             continue
             
         collect_gesture_data(gesture_name)
