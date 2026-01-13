@@ -39,7 +39,15 @@ for letter_dir in sorted(DATA_DIR.iterdir()):
         
         for npy_file in samples:
             landmarks = np.load(npy_file)
-            X.append(landmarks.flatten())  # Flatten (21,3) -> (63,)
+            # Ensure landmarks are flattened to (63,)
+            if landmarks.ndim == 2:
+                landmarks = landmarks.flatten()
+            elif landmarks.ndim == 1 and len(landmarks) == 63:
+                pass  # Already correct shape
+            elif landmarks.ndim == 1:
+                # If already flattened but wrong size, try reshape
+                landmarks = landmarks[:63]  # Take first 63 values
+            X.append(landmarks)
             y.append(label)
 
 X = np.array(X)
@@ -59,6 +67,16 @@ print("="*60)
 # Load first sample of 'A'
 sample_file = list((DATA_DIR / 'A').glob('*.npy'))[0]
 landmarks = np.load(sample_file)
+
+# Ensure landmarks are in correct shape (21, 3)
+if landmarks.ndim == 1:
+    # If flattened, reshape to (21, 3)
+    landmarks = landmarks.reshape(-1, 3)
+elif landmarks.shape != (21, 3):
+    # If wrong shape, try to reshape
+    landmarks = landmarks.reshape(-1, 3)[:21]  # Take first 21 landmarks if more
+
+print(f"Sample shape: {landmarks.shape}")
 
 fig = plt.figure(figsize=(12, 5))
 
