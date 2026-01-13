@@ -1,0 +1,22 @@
+{
+  "title": "ASL Alphabet Hand Landmarks - MediaPipe 3D",
+  "id": "borisgraudt/asl-alphabet-hand-landmarks",
+  "licenses": [
+    {
+      "name": "CC0-1.0"
+    }
+  ],
+  "keywords": [
+    "computer vision",
+    "sign language",
+    "accessibility",
+    "hand tracking",
+    "mediapipe",
+    "pose estimation",
+    "education",
+    "deep learning"
+  ],
+  "subtitle": "10,508 3D hand landmark samples for ASL alphabet (A-Z) recognition",
+  "description": "# ASL Alphabet Hand Landmarks Dataset\n\nHigh-quality 3D hand landmark coordinates for American Sign Language (A-Z) alphabet recognition, collected using Google MediaPipe.\n\n## Dataset Overview\n\n- **Total Samples:** 10,508\n- **Classes:** 26 (A-Z)\n- **Samples per class:** ~400 (balanced)\n- **Format:** NumPy `.npy` files\n- **Landmark model:** MediaPipe Hands (21 landmarks)\n- **Coordinate system:** 3D (x, y, z)\n\n## File Structure\n\n```\nlandmarks/\n├── A/ (404 samples)\n├── B/ (400 samples)\n├── C/ (403 samples)\n... (26 total)\n└── Z/ (403 samples)\n```\n\n## Data Format\n\nEach `.npy` file contains a single hand gesture:\n\n```python\nimport numpy as np\nlandmarks = np.load('landmarks/A/frame_001.npy')\nprint(landmarks.shape)  # (21, 3)\n```\n\n- **Shape:** `(21, 3)` - 21 hand landmarks with (x, y, z) coordinates\n- **Normalization:** Position-invariant (centered at wrist landmark)\n- **Scale:** Distance-normalized for hand size invariance\n\n## MediaPipe Hand Landmarks\n\n```\n0: WRIST\n1-4: THUMB (CMC, MCP, IP, TIP)\n5-8: INDEX (MCP, PIP, DIP, TIP)\n9-12: MIDDLE (MCP, PIP, DIP, TIP)\n13-16: RING (MCP, PIP, DIP, TIP)\n17-20: PINKY (MCP, PIP, DIP, TIP)\n```\n\n## Usage Example\n\nSee the example notebook for complete training pipeline.\n\n## Related Project\n\nThis dataset was collected for the [ASL&AI](https://github.com/borisgraudt/asl-ai) project, which achieves 97.2% accuracy on real-time ASL alphabet recognition.\n\n## Citation\n\nIf you use this dataset, please cite:\n\n```bibtex\n@dataset{asl_landmarks_2024,\n  author    = {Graudt, Boris},\n  title     = {ASL Alphabet Hand Landmarks - MediaPipe 3D},\n  year      = {2024},\n  publisher = {Kaggle},\n  url       = {https://www.kaggle.com/datasets/borisgraudt/asl-alphabet-hand-landmarks}\n}\n```"
+}
+
