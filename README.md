@@ -14,6 +14,8 @@ Local ASL alphabet recognition (A-Z) from webcam. No cloud, no tracking, no data
 
 **Performance:** 97.2% test accuracy • <5ms latency • <5MB model size
 
+![Demo](docs/demo.gif)
+
 ---
 
 ## Quick Start
@@ -51,15 +53,24 @@ Models saved to `models/`, plots to `plots/`.
 
 **Full dataset available on Kaggle:** 10,508 samples • 26 classes • Balanced
 
+### Download Full Dataset (Kaggle)
+
 ```bash
-# Download via Kaggle CLI
+# Option 1: Via Kaggle CLI (recommended)
 kaggle datasets download -d borisgraudt/asl-alphabet-hand-landmarks
-unzip asl-alphabet-hand-landmarks.zip -d data/
+unzip asl-alphabet-hand-landmarks.zip
+# Kaggle dataset has 'landmarks/' folder, move contents to data/raw_gestures/
+mkdir -p data/raw_gestures
+cp -r landmarks/* data/raw_gestures/
+rm -rf landmarks asl-alphabet-hand-landmarks.zip
+
+# Option 2: Manual download
+# 1. Download from https://kaggle.com/datasets/borisgraudt/asl-alphabet-hand-landmarks
+# 2. Extract the zip file
+# 3. Copy contents of landmarks/ folder to data/raw_gestures/
 ```
 
-Or download manually from **[Kaggle](https://kaggle.com/datasets/borisgraudt/asl-alphabet-hand-landmarks)**
-
-This repo includes sample data in `data/sample_raw_gestures/` for quick testing.
+**Note:** This repo includes sample data in `data/sample_raw_gestures/` for quick testing. For full training, download the Kaggle dataset.
 
 ---
 

@@ -58,9 +58,44 @@ robustness: ## Run multi-seed robustness eval (writes logs/robustness_summary.js
 	@echo "Running robustness evaluation..."
 	$(PYTHON) scripts/robustness_eval.py
 
-prepare-data: ## Prepare training data
+prepare-data: ## Prepare training data (uses sample dataset by default)
 	@echo "Preparing training data..."
 	$(PYTHON) scripts/prepare.py
+
+download-kaggle: ## Download full dataset from Kaggle (requires kaggle CLI)
+	@echo "Downloading Kaggle dataset..."
+	@which kaggle > /dev/null || (echo "ERROR: Kaggle CLI not found. Install with: pip install kaggle" && exit 1)
+	kaggle datasets download -d borisgraudt/asl-alphabet-hand-landmarks
+	@echo "Extracting dataset..."
+	unzip -q asl-alphabet-hand-landmarks.zip || true
+	@echo "Moving to data/raw_gestures/..."
+	mkdir -p data/raw_gestures
+	cp -r landmarks/* data/raw_gestures/ 2>/dev/null || true
+	rm -rf landmarks asl-alphabet-hand-landmarks.zip
+	@echo "✓ Kaggle dataset downloaded to data/raw_gestures/"
+
+prepare-data-full: ## Prepare training data with full dataset (data/raw_gestures)
+	@echo "Preparing training data with FULL dataset (Kaggle)..."
+	@echo "Using: data/raw_gestures"
+	@if [ ! -d "data/raw_gestures" ] || [ -z "$$(ls -A data/raw_gestures 2>/dev/null)" ]; then \
+		echo "ERROR: Full dataset not found in data/raw_gestures/"; \
+		echo "Download it first with: make download-kaggle"; \
+		exit 1; \
+	fi
+	ASL_AI_RAW_DATA_DIR=data/raw_gestures $(PYTHON) scripts/prepare.py
+
+train-full: ## Train the model with full Kaggle dataset
+	@echo "Training ASL recognition model with FULL Kaggle dataset..."
+	@echo "Step 1: Preparing data from data/raw_gestures..."
+	@if [ ! -d "data/raw_gestures" ] || [ -z "$$(ls -A data/raw_gestures 2>/dev/null)" ]; then \
+		echo "ERROR: Full dataset not found in data/raw_gestures/"; \
+		echo "Download it first with: make download-kaggle"; \
+		exit 1; \
+	fi
+	ASL_AI_RAW_DATA_DIR=data/raw_gestures $(PYTHON) scripts/prepare.py
+	@echo "Step 2: Training model..."
+	$(PYTHON) scripts/train.py
+	@echo "Training complete!"
 
 test: ## Run unit tests
 	@echo "Running tests..."

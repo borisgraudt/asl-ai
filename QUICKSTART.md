@@ -21,8 +21,10 @@ make install
 
 ## Training a Model
 
+### Using Sample Dataset (Default)
+
 ```bash
-# Prepare training data
+# Prepare training data (uses data/sample_raw_gestures by default)
 make prepare-data
 # or
 python scripts/prepare.py
@@ -32,6 +34,48 @@ make train
 # or
 python scripts/train.py
 ```
+
+### Using Full Dataset (Kaggle)
+
+The full dataset is available on **[Kaggle](https://kaggle.com/datasets/borisgraudt/asl-alphabet-hand-landmarks)** (10,508 samples).
+
+#### Step 1: Download Kaggle Dataset
+
+```bash
+# Option 1: Use Makefile command (easiest)
+make download-kaggle
+
+# Option 2: Manual Kaggle CLI
+kaggle datasets download -d borisgraudt/asl-alphabet-hand-landmarks
+unzip asl-alphabet-hand-landmarks.zip
+mkdir -p data/raw_gestures
+cp -r landmarks/* data/raw_gestures/
+rm -rf landmarks asl-alphabet-hand-landmarks.zip
+
+# Option 3: Manual download from web
+# 1. Go to https://kaggle.com/datasets/borisgraudt/asl-alphabet-hand-landmarks
+# 2. Click "Download" 
+# 3. Extract the zip file (you'll get a 'landmarks/' folder)
+# 4. Copy contents of landmarks/ folder to data/raw_gestures/
+```
+
+#### Step 2: Train with Full Dataset
+
+```bash
+# Option 1: Use Makefile commands (recommended)
+make train-full         # Prepare + train with full dataset
+
+# Option 2: Use environment variable
+export ASL_AI_RAW_DATA_DIR=data/raw_gestures
+make prepare-data
+make train
+
+# Option 3: Direct Python commands
+ASL_AI_RAW_DATA_DIR=data/raw_gestures python scripts/prepare.py
+python scripts/train.py
+```
+
+**Note:** The full Kaggle dataset contains all 26 letters (A-Z) with ~400 samples per letter (10,508 total), which will result in much better model accuracy compared to the sample dataset (~30 samples total).
 
 ## Running the Demo
 
@@ -131,7 +175,23 @@ make docs
 
 ### Model not found
 - Train the model first: `make train`
-- Check that `models/model.h5` exists
+- Check that `models/model.h5` or `models/model.keras` exists
+
+### Keras Version Incompatibility Error
+If you see an error like:
+```
+Could not deserialize class 'Functional' because its parent module keras.src.models.functional cannot be imported
+```
+
+This means the model was saved with Keras 3.x but you're using Keras 2.13.1. **Solution:**
+```bash
+# Retrain the model with your current Keras version
+make train
+# or
+python scripts/train.py
+```
+
+This will create a new model file compatible with Keras 2.13.1.
 
 ### Import errors
 - Ensure virtual environment is activated
